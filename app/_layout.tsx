@@ -1,24 +1,41 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import * as Linking from "expo-linking";
+import { Stack, useRouter } from "expo-router";
+import React, { useEffect } from "react";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Handle deep linking
+    const handleDeepLink = (event: { url: string }) => {
+      const { path, queryParams } = Linking.parse(event.url);
+
+      if (path) {
+        // Navigate to the specified path
+        router.push(path as any);
+      }
+    };
+
+    // Listen for deep links
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+
+    // Check if app was opened with a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="items/add" options={{ presentation: "modal" }} />
+      <Stack.Screen name="items/[id]" options={{ presentation: "modal" }} />
+    </Stack>
   );
 }
