@@ -29,7 +29,8 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (username: string, password: string) => {
         try {
-          // Try Supabase first
+          // 1. Cek langsung ke Supabase (Username & Password)
+          // Pastikan di database kolom password menyimpan plain text sesuai logic ini
           const { data, error } = await supabase
             .from("users")
             .select("*")
@@ -37,58 +38,37 @@ export const useAuthStore = create<AuthState>()(
             .eq("password", password)
             .single();
 
-          if (data && !error) {
-            const user: User = {
-              id: data.id,
-              username: data.username,
-              email: data.email,
-              password: data.password,
-              role: data.role,
-              createdAt: data.created_at,
-            };
-            set({ user });
-            return { success: true, message: "Login berhasil!" };
+          if (error || !data) {
+            return { success: false, message: "Username atau password salah!" };
           }
 
-          // Fallback to mock authentication
-          if (username === "admin" && password === "admin") {
-            const adminUser: User = {
-              id: "admin-1",
-              username: "admin",
-              email: "admin@petshop.com",
-              password: "admin",
-              role: "admin",
-              createdAt: new Date().toISOString(),
-            };
-            set({ user: adminUser });
-            return { success: true, message: "Login berhasil sebagai Admin!" };
-          }
+          // 2. Jika ketemu, simpan ke state
+          const user: User = {
+            id: data.id,
+            username: data.username,
+            email: data.email,
+            password: data.password,
+            role: data.role, // Pastikan kolom role di DB isinya 'admin' atau 'customer'
+            createdAt: data.created_at,
+          };
 
-          return { success: false, message: "Username atau password salah!" };
+          set({ user });
+          return {
+            success: true,
+            message: `Selamat datang, ${user.username}!`,
+          };
         } catch (error) {
           console.error("Login error:", error);
-
-          // Fallback for demo
-          if (username === "admin" && password === "admin") {
-            const adminUser: User = {
-              id: "admin-1",
-              username: "admin",
-              email: "admin@petshop.com",
-              password: "admin",
-              role: "admin",
-              createdAt: new Date().toISOString(),
-            };
-            set({ user: adminUser });
-            return { success: true, message: "Login berhasil sebagai Admin!" };
-          }
-
-          return { success: false, message: "Terjadi kesalahan saat login" };
+          return {
+            success: false,
+            message: "Terjadi kesalahan koneksi database",
+          };
         }
       },
 
       register: async (username: string, email: string, password: string) => {
         try {
-          // Check if username exists
+          // Cek username duplikat
           const { data: existingUser } = await supabase
             .from("users")
             .select("username")
@@ -99,7 +79,7 @@ export const useAuthStore = create<AuthState>()(
             return { success: false, message: "Username sudah digunakan!" };
           }
 
-          // Insert new user
+          // Insert user baru (Default role: customer)
           const { data, error } = await supabase
             .from("users")
             .insert([
@@ -107,7 +87,7 @@ export const useAuthStore = create<AuthState>()(
                 username,
                 email,
                 password,
-                role: "customer",
+                role: "customer", // Default user biasa
               },
             ])
             .select()
@@ -128,21 +108,9 @@ export const useAuthStore = create<AuthState>()(
           return { success: true, message: "Registrasi berhasil!" };
         } catch (error) {
           console.error("Register error:", error);
-
-          // Fallback to local storage
-          const newUser: User = {
-            id: Date.now().toString(),
-            username,
-            email,
-            password,
-            role: "customer",
-            createdAt: new Date().toISOString(),
-          };
-
-          set({ user: newUser });
           return {
-            success: true,
-            message: "Registrasi berhasil (offline mode)!",
+            success: false,
+            message: "Gagal mendaftar. Cek koneksi internet.",
           };
         }
       },
@@ -153,10 +121,10 @@ export const useAuthStore = create<AuthState>()(
 
       fetchUsers: async () => {
         try {
+          // Ambil semua user kecuali user yang sedang login (opsional) atau ambil semua customer
           const { data, error } = await supabase
             .from("users")
             .select("id, username, email, password, role, created_at")
-            .eq("role", "customer")
             .order("created_at", { ascending: false });
 
           if (error) throw error;
@@ -170,10 +138,9 @@ export const useAuthStore = create<AuthState>()(
             createdAt: u.created_at,
           }));
 
-          set({ users: formattedUsers || [] });
+          set({ users: formattedUsers });
         } catch (error) {
           console.error("Fetch users error:", error);
-          // Set empty array if failed
           set({ users: [] });
         }
       },
@@ -181,16 +148,14 @@ export const useAuthStore = create<AuthState>()(
       deleteUser: async (id: string) => {
         try {
           const { error } = await supabase.from("users").delete().eq("id", id);
-
           if (error) throw error;
 
+          // Update local state
           const { users } = get();
           set({ users: users.filter((u) => u.id !== id) });
         } catch (error) {
           console.error("Delete user error:", error);
-          // Still remove locally
-          const { users } = get();
-          set({ users: users.filter((u) => u.id !== id) });
+          alert("Gagal menghapus user dari database.");
         }
       },
     }),

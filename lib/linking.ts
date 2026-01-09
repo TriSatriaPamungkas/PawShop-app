@@ -3,9 +3,9 @@ import * as Linking from "expo-linking";
 export const linking = {
   prefixes: [
     Linking.createURL("/"),
-    "petshop://",
-    "https://petshop.app",
-    "https://*.petshop.app",
+    "pawshop://",
+    "https://pawshop.app",
+    "https://*.pawshop.app",
   ],
   config: {
     screens: {

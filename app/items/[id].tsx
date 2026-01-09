@@ -90,11 +90,11 @@ export default function ItemDetailScreen() {
   const handleShare = async () => {
     try {
       // Create Airbridge deep link (akan disetup setelah Airbridge configured)
-      const airbridgeLink = `https://YOUR_APP.airbridge.io/item/${id}`;
-      const customScheme = `petshop://item/${id}`;
+      const airbridgeLink = `https://pawshop.airbridge.io/item/${id}`;
+      const customScheme = `pawshop://item/${id}`;
 
       await Share.share({
-        message: `Check out ${item?.name} on Petshop App!\n\n${airbridgeLink}`,
+        message: `Check out ${item?.name} on PawShop App!\n\n${airbridgeLink}`,
         url: airbridgeLink,
         title: item?.name,
       });
@@ -165,7 +165,7 @@ export default function ItemDetailScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.image} />
+          <Image source={item.image as any} style={styles.image} />
           <View
             style={[
               styles.statusBadge,
@@ -233,14 +233,6 @@ export default function ItemDetailScreen() {
               <Text style={styles.featureBullet}>•</Text>
               <Text style={styles.featureText}>Suitable for all ages</Text>
             </View>
-          </View>
-
-          <View style={styles.deepLinkInfo}>
-            <Text style={styles.deepLinkTitle}>🔗 Deep Link</Text>
-            <Text style={styles.deepLinkText}>petshop://item/{id}</Text>
-            <Text style={styles.deepLinkText}>
-              https://YOUR_APP.airbridge.io/item/{id}
-            </Text>
           </View>
         </View>
       </ScrollView>

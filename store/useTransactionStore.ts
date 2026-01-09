@@ -11,6 +11,7 @@ interface TransactionState {
   ) => Promise<void>;
   getTransactionsByUser: (userId: string) => Transaction[];
   fetchTransactions: () => Promise<void>;
+  clearTransactions: () => Promise<void>;
 }
 
 export const useTransactionStore = create<TransactionState>()(
@@ -86,6 +87,30 @@ export const useTransactionStore = create<TransactionState>()(
 
       getTransactionsByUser: (userId) => {
         return get().transactions.filter((t) => t.userId === userId);
+      },
+      clearTransactions: async () => {
+        try {
+          console.log("Mencoba menghapus SEMUA data...");
+
+          const { error, count } = await supabase
+            .from("transactions")
+            .delete({ count: "exact" })
+            .neq("id", "00000000-0000-0000-0000-000000000000"); // Menghapus dimana ID tidak sama dengan string "0"
+
+          if (error) {
+            throw error;
+          }
+
+          console.log(`Berhasil menghapus ${count} data dari database.`);
+
+          // LOCAL STATE: Kosongkan array transactions
+          set({ transactions: [] });
+
+          alert("Semua riwayat transaksi telah dihapus permanen.");
+        } catch (error) {
+          console.error("Clear all error:", error);
+          alert("Gagal menghapus data. Cek Permission/RLS Database.");
+        }
       },
     }),
     {

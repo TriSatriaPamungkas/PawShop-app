@@ -11,12 +11,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ClearHistoryButton from "../../components/clearbutton";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTransactionStore } from "../../store/useTransactionStore";
 import { Transaction } from "../../types";
 
 export default function HistoryScreen() {
   const user = useAuthStore((state) => state.user);
+  const users = useAuthStore((state) => state.users);
+
   const transactions = useTransactionStore((state) => state.transactions);
   const getTransactionsByUser = useTransactionStore(
     (state) => state.getTransactionsByUser
@@ -56,6 +59,34 @@ export default function HistoryScreen() {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  // --- FUNGSI BARU: HITUNG KEUANGAN ---
+  // Menghitung subtotal murni dari harga item * qty
+  const calculateFinancials = (transaction: Transaction) => {
+    const subtotal = transaction.items.reduce((sum, item) => {
+      return sum + item.price * item.quantity;
+    }, 0);
+
+    const tax = subtotal * 0.12; // Pajak 12% dari subtotal murni
+
+    return { subtotal, tax };
+  };
+
+  // Hitung nilai untuk transaksi yang sedang dipilih (jika ada)
+  const { subtotal, tax } = selectedTransaction
+    ? calculateFinancials(selectedTransaction)
+    : { subtotal: 0, tax: 0 };
+
+  const renderFooter = () => {
+    if (user?.role === "admin") {
+      return (
+        <View style={styles.footerContainer}>
+          <ClearHistoryButton />
+        </View>
+      );
+    }
+    return <View style={{ marginBottom: 20 }} />;
   };
 
   const renderTransaction = ({ item }: { item: Transaction }) => (
@@ -109,6 +140,7 @@ export default function HistoryScreen() {
               renderItem={renderTransaction}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.listContent}
+              ListFooterComponent={renderFooter}
             />
           </>
         )}
@@ -134,6 +166,23 @@ export default function HistoryScreen() {
             </View>
 
             <ScrollView style={styles.modalContent}>
+              {/* --- PANEL CUSTOMER INFO (KHUSUS ADMIN) --- */}
+              {user?.role === "admin" && (
+                <View style={styles.detailCard}>
+                  <View style={styles.detailHeader}>
+                    <Ionicons
+                      name="person-circle-outline"
+                      size={24}
+                      color="black"
+                    />
+                    <Text style={styles.detailHeaderText}>CUSTOMER INFO</Text>
+                  </View>
+                  <Text style={styles.fullDate}>
+                    {selectedTransaction.userId}
+                  </Text>
+                </View>
+              )}
+
               {/* Date & Time */}
               <View style={styles.detailCard}>
                 <View style={styles.detailHeader}>
@@ -175,37 +224,40 @@ export default function HistoryScreen() {
                 ))}
               </View>
 
-              {/* Payment Summary */}
+              {/* Payment Summary - UPDATED LOGIC */}
               <View style={styles.detailCard}>
                 <View style={styles.detailHeader}>
                   <Ionicons name="card-outline" size={24} color="black" />
                   <Text style={styles.detailHeaderText}>PAYMENT SUMMARY</Text>
                 </View>
+
+                {/* Subtotal yang dihitung dari items */}
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Subtotal</Text>
                   <Text style={styles.summaryValue}>
-                    Rp. {selectedTransaction.total.toLocaleString("id-ID")}
+                    Rp. {subtotal.toLocaleString("id-ID")}
                   </Text>
                 </View>
+
+                {/* Tax 12% dari Subtotal */}
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Tax (11%)</Text>
+                  <Text style={styles.summaryLabel}>PPn (12%)</Text>
                   <Text style={styles.summaryValue}>
                     Rp.{" "}
-                    {(selectedTransaction.total * 0.11).toLocaleString(
-                      "id-ID",
-                      { maximumFractionDigits: 0 }
-                    )}
+                    {tax.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                   </Text>
                 </View>
+
                 <View style={styles.divider} />
+
+                {/* Total Paid diambil langsung dari Data Transaksi (Grand Total) */}
                 <View style={styles.summaryRow}>
                   <Text style={styles.totalLabel}>Total Paid</Text>
                   <Text style={styles.totalValue}>
                     Rp.{" "}
-                    {(selectedTransaction.total * 1.11).toLocaleString(
-                      "id-ID",
-                      { maximumFractionDigits: 0 }
-                    )}
+                    {selectedTransaction.total.toLocaleString("id-ID", {
+                      maximumFractionDigits: 0,
+                    })}
                   </Text>
                 </View>
               </View>
@@ -363,6 +415,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000",
     letterSpacing: 1,
+    marginLeft: 8,
   },
   fullDate: {
     fontSize: 16,
@@ -373,6 +426,11 @@ const styles = StyleSheet.create({
   fullTime: {
     fontSize: 16,
     color: "#000",
+  },
+  subText: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 4,
   },
   purchasedItem: {
     flexDirection: "row",
@@ -434,5 +492,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#000000",
+  },
+  footerContainer: {
+    marginTop: 20,
+    marginBottom: 40,
+    paddingHorizontal: 4,
   },
 });
