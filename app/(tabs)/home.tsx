@@ -53,9 +53,8 @@ export default function HomeScreen() {
   };
 
   const handleItemPress = (item: Item) => {
-    if (user?.role === "admin") {
-      router.push(`/items/${item.id}`);
-    }
+    // Navigate to item detail screen
+    router.push(`/items/${item.id}`);
   };
 
   return (
@@ -136,7 +135,6 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
