@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -5,7 +6,6 @@ import {
   Image,
   Modal,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -87,22 +87,6 @@ export default function ItemDetailScreen() {
     showToast("Added to cart successfully!");
   };
 
-  const handleShare = async () => {
-    try {
-      // Create Airbridge deep link (akan disetup setelah Airbridge configured)
-      const airbridgeLink = `https://pawshop.airbridge.io/item/${id}`;
-      const customScheme = `pawshop://item/${id}`;
-
-      await Share.share({
-        message: `Check out ${item?.name} on PawShop App!\n\n${airbridgeLink}`,
-        url: airbridgeLink,
-        title: item?.name,
-      });
-    } catch (error) {
-      console.error("Share error:", error);
-    }
-  };
-
   const handleEdit = () => {
     setShowEditModal(true);
   };
@@ -158,9 +142,6 @@ export default function ItemDetailScreen() {
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Item Details</Text>
-        <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
-          <Text style={styles.shareIcon}>🔗</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
@@ -425,13 +406,6 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     flex: 1,
     textAlign: "center",
-  },
-  shareButton: {
-    width: 40,
-    alignItems: "flex-end",
-  },
-  shareIcon: {
-    fontSize: 20,
   },
   content: {
     flex: 1,
