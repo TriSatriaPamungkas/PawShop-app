@@ -1,13 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createClient } from "@supabase/supabase-js";
+import Constants from "expo-constants";
 
 // Mengambil variabel dari .env
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey =
+  Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // Validasi agar tidak error jika lupa isi .env
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL atau Anon Key belum disetting di file .env');
+  throw new Error("Supabase URL atau Anon Key belum disetting di file .env");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
